@@ -73,12 +73,9 @@ func_f:
     move    $v0, $t0
     j exit_func_f
 
-
     return_0:
         li      $v0, 2
         j exit_func_f
-
-
 
     exit_func_f:
         lw      $ra, 0($sp)
