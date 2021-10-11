@@ -1,9 +1,14 @@
 .text
 .globl main
 main:
-    addi	$sp, $sp, -8        # $sp = $sp - 8, move stack lower
-    sw      $ra, 4($sp)         # Store $ra into stack
-    sw      $t0, 0($sp)         # Store $t0 into stack
+    addi	$sp, $sp, -4        # $sp = $sp - 8, move stack lower
+    sw      $ra, 0($sp)         # Store $ra into stack
+    addi    $sp, $sp, -20
+    sw      $t0, 16($sp)        # Store $t0 into stack
+    sw      $t1, 12($sp)        # Store $t0 into stack
+    sw      $t2, 8($sp)         # Store $t0 into stack
+    sw      $t3, 4($sp)         # Store $t0 into stack
+    sw      $t4, 0($sp)         # Store $t0 into stack
 
     la      $a0, ask_msg		# Load the adress of the message into $a0
     li      $v0, 4              # $t0 = 4, let syscall to print
@@ -50,9 +55,14 @@ _for_loop:
 _out_loop:
 
 
-    lw      $t0, 0($sp)
-    lw      $ra, 4($sp)
-    addi    $sp, $sp, 8
+    sw      $t0, 16($sp)        # Store $t0 into stack
+    sw      $t1, 12($sp)        # Store $t0 into stack
+    sw      $t2, 8($sp)         # Store $t0 into stack
+    sw      $t3, 4($sp)         # Store $t0 into stack
+    sw      $t4, 0($sp)         # Store $t0 into stack
+    addi    $sp, $sp, 20
+    lw      $ra, 0($sp)
+    addi    $sp, $sp, 4
     jr		$ra					# jump to $ra
 .end main
 
