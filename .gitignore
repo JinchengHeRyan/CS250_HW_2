@@ -1,2 +1,4 @@
 tests/*_actual_*.txt*
 tests/*_diff_*.txt
+
+.DS_Store
