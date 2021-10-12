@@ -33,11 +33,15 @@ _remove_nln:
 
 .globl main
 main:
-    # malloc 72 bytes and stores in $s0
+    li      $s0, 0      # head is NULL
+    li      $s1, 0      # tail is NULL
+
+_loop_for_input:
+    # malloc 72 bytes and stores in $t0
     li      $v0, 9
     li      $a0, 72
     syscall
-    move    $s0, $v0
+    move    $t0, $v0
 
     # Print "Pizza name: "
     li      $v0, 4
@@ -45,7 +49,7 @@ main:
     syscall
 
     # Read string buffer
-    la      $a0, 0($s0)
+    la      $a0, 0($t0)
     li      $a1, 64
     li      $v0, 8
     syscall
@@ -54,12 +58,30 @@ main:
     addi    $sp, $sp, -4
     sw      $ra, 0($sp)
 
-    la      $a0, 0($s0)
+    la      $a0, 0($t0)
     jal     _remove_nln
 
     lw      $ra, 0($sp)
     addi    $sp, $sp, 4
 
+    # Compare with DONE
+    la      $t4, 0($t0)
+    la      $t1, done_str       # $t1 is "DONE"
+    _comp_loop:
+    lb      $t2, 0($t4)         # $t4 is name
+    lb      $t3, 0($t1)
+    beq     $t2, $t3, _continue_comp
+    b       _isNotDone
+
+
+    _continue_comp:
+    beq     $t3, $zero, _loop_out_input
+    addi    $t1, $t1, 1
+    addi    $t4, $t4, 1
+    b       _comp_loop
+
+
+_isNotDone:
     # Print "Pizza diameter: "
     li      $v0, 4
     la      $a0, pizza_dia_str
@@ -85,6 +107,13 @@ main:
     # mov.s       $f12, $f5
     # syscall
 
+    # See if diameter or cost is 0
+    li.s        $f0, 0.0
+    c.eq.s      $f4, $f0
+    bc1t _out_zero
+    c.eq.s      $f5, $f0
+    bc1t _out_zero
+
     # Load PI into $f6
     l.s         $f6, PI
 
@@ -94,19 +123,64 @@ main:
     mul.s       $f4, $f4, $f4
     mul.s       $f4, $f4, $f6
     div.s       $f4, $f4, $f5
+    b _not_zero
 
-    # Store the result into struct $s0
-    s.s         $f4, 64($s0)
+    # Store the result into struct $t0
+    _out_zero:
+        li.s        $f4, 0.0
+    _not_zero:
+    s.s         $f4, 64($t0)
 
+    bnez        $s0, _HeadnotNull
+        la      $s0, 0($t0)
+        la      $s1, 0($t0)
+
+_HeadnotNull:
+    sw          $t0, 68($s1)
+    la          $s1, 0($t0)
+b   _loop_for_input
+
+_loop_out_input:
+    # Print out result
+    # li          $v0, 4
+    # la          $a0, 0($s0)
+    # syscall
+    # li          $v0, 4
+    # la          $a0, space
+    # syscall
+    # li          $v0, 2
+    # l.s         $f12, 64($s0)
+    # syscall
+
+    # Loop the linked list and print
+    move        $t0, $s0
+    _loop_linked_list:
+    beqz        $t0, _end_print
     li          $v0, 4
-    la          $a0, 0($s0)
+    la          $a0, 0($t0)
     syscall
     li          $v0, 4
     la          $a0, space
     syscall
     li          $v0, 2
-    l.s         $f12, 64($s0)
+    l.s         $f12, 64($t0)
     syscall
+    li          $v0, 4
+    la          $a0, nln
+    syscall
+
+    lw          $t0, 68($t0)
+    b _loop_linked_list
+
+
+    _end_print:
+
+
+
+
+    # Need to sort the list
+
+
 
 
     jr $ra
@@ -119,3 +193,4 @@ pizza_cost_str: .asciiz "Pizza cost: "
 PI:             .float  3.14159265358979323846
 space:          .asciiz " "
 nln:            .asciiz "\n"
+done_str:       .asciiz "DONE"
