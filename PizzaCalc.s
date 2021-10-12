@@ -130,10 +130,12 @@ _isNotDone:
         li.s        $f4, 0.0
     _not_zero:
     s.s         $f4, 64($t0)
+    sw          $zero, 68($t0)
 
     bnez        $s0, _HeadnotNull
         la      $s0, 0($t0)
         la      $s1, 0($t0)
+        b       _loop_for_input
 
 _HeadnotNull:
     sw          $t0, 68($s1)
@@ -170,15 +172,25 @@ _loop_out_input:
     syscall
 
     lw          $t0, 68($t0)
-    b _loop_linked_list
+    b           _loop_linked_list
 
 
     _end_print:
 
 
+    # Need to sort the list, $s0 is head, $s1 is tail
+    # move        $t0, $s0        # $t0 is the temp pointer from head
+    # move        $t1, $s0        # $t1 is the temp pointer from head
+
+    # beqz        $t1, _out_sort
+    # l.s         $f4, 64($t1)    # $f4 stores the ppd in $t1
 
 
-    # Need to sort the list
+
+
+    # _out_sort:
+
+
 
 
 
