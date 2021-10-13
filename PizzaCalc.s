@@ -138,23 +138,68 @@ _isNotDone:
         b       _loop_for_input
 
 _HeadnotNull:
-    sw          $t0, 68($s1)
-    la          $s1, 0($t0)
+    # Sort
+    # $s0 is head
+    # $s1 is tail
+    # $t0 is the new input node
+    # $t1 is the current node
+    # $t2 is the previous node
+    # $t3 is the compare result
+
+    # Previous = NULL
+    li      $t2, 0
+    move    $t1, $s0        # $t1 begins from head
+    _sort_loop:
+        beqz    $t1, _insert_at_last
+
+        # Call compare function
+        addi    $sp, $sp, -4
+        sw      $ra, 0($sp)
+
+        move    $a0, $t0
+        move    $a1, $t1
+        jal     comp_two_pizza
+
+        move    $t3, $v0
+
+        lw      $ra, 0($sp)
+        addi    $sp, $sp, 4
+
+        # if $t0 > $t1 ($t3 == 1)
+        bne     $t3, 1, _else_not_one
+            sw      $t1, 68($t0)        # t0.next = t1
+            beqz    $t2, _previous_is_null
+                sw      $t0, 68($t2)    # (t2)previous.next = t0(new input)
+                b       _sort_end_loop
+
+            _previous_is_null:
+                sw      $t1, 68($t0)        # t0.next = t1
+                move    $s0, $t0            # set $t0 as head
+                b       _sort_end_loop
+
+        _else_not_one:
+            # t2 = t1
+            move    $t2, $t1
+            # t1 = t1.next
+            lw      $t1, 68($t1)
+            b       _sort_loop
+
+    _insert_at_last:
+        # t2.next = t0
+            sw      $t0, 68($t2)
+        # s1 = t0
+            move    $s1, $t0
+
+    _sort_end_loop:
+
+    # sw          $t0, 68($s1)
+    # la          $s1, 0($t0)
 b   _loop_for_input
 
 _loop_out_input:
-    # Print out result
-    # li          $v0, 4
-    # la          $a0, 0($s0)
-    # syscall
-    # li          $v0, 4
-    # la          $a0, space
-    # syscall
-    # li          $v0, 2
-    # l.s         $f12, 64($s0)
-    # syscall
-
     # Loop the linked list and print
+    # $s0 is head
+    # $t0 is this node
     move        $t0, $s0
     _loop_linked_list:
     beqz        $t0, _end_print
@@ -177,26 +222,93 @@ _loop_out_input:
 
     _end_print:
 
-
-    # Need to sort the list, $s0 is head, $s1 is tail
-    # move        $t0, $s0        # $t0 is the temp pointer from head
-    # move        $t1, $s0        # $t1 is the temp pointer from head
-
-    # beqz        $t1, _out_sort
-    # l.s         $f4, 64($t1)    # $f4 stores the ppd in $t1
-
-
-
-
-    # _out_sort:
-
-
-
-
-
-
     jr $ra
 .end main
+
+
+
+
+comp_two_pizza:
+    # Use registers, $s0, $s1, $s2, $s3
+    addi    $sp, $sp, -16
+    sw      $s0, 0($sp)
+    sw      $s1, 4($sp)
+    sw      $s2, 8($sp)
+    sw      $s3, 12($sp)
+
+
+    l.s    $f4, 64($a0)    # $f4 = ppd_0
+    l.s    $f5, 64($a1)    # $f5 = ppd_1
+    # if ppd_0 > ppd_1
+    c.le.s  $f4, $f5
+    bc1t    _else
+        b       _return_1
+
+    # else (ppd_0 <= ppd_1):
+    _else:
+        # if ppd_0 == ppd_1:
+        c.lt.s      $f4, $f5
+        bc1t        _else_smaller
+            # Loop from the name
+            # Load two names, $s0, $s1
+            la      $s0, 0($t0)
+            la      $s1, 0($t1)
+
+            # For loop
+            _name_sort_loop:
+            # Load bytes for s0, s1, they are s2, s3
+            lb      $s2, 0($s0)
+            lb      $s3, 0($s1)
+            # if s2 != null
+            beqz    $s2, _return_1
+                # if s3 != null
+                beqz    $s3, _return_minus_1
+                    # if s2 < s3
+                    bge    $s2, $s3, _elseif_bigger_orEqual
+                        b       _return_1
+                    
+                    _elseif_bigger_orEqual:
+                        # if s2 >= s3
+                        bne     $s2, $s3, _elseelseif_bigger
+                            # s2 == s3
+                            b   _continue_name_sort
+
+                        # if s2 > s3
+                        _elseelseif_bigger:
+                            b       _return_minus_1
+
+
+            _continue_name_sort:
+                addi    $s0, $s0, 4
+                addi    $s1, $s1, 4
+                b       _name_sort_loop
+
+
+            # _end_name_sort_loop:
+
+        # else if ppd_0 < ppd_1
+        _else_smaller:
+            b       _return_minus_1
+
+    # _end_if:
+
+    _return_1:
+        li      $v0, 1
+        b       _return
+
+    _return_minus_1:
+        li      $v0, -1
+        b       _return
+
+    _return:
+
+    lw      $s0, 0($sp)
+    lw      $s1, 4($sp)
+    lw      $s2, 8($sp)
+    lw      $s3, 12($sp)
+    addi    $sp, $sp, 16
+    jr      $ra
+
 
 .data
 pizza_name_str: .asciiz "Pizza name: "
