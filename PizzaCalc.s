@@ -17,7 +17,7 @@ _remove_nln:
 
     _loop:
         lb      $t1, 0($a0)
-        beq     $t1, '\n', _out_loop
+        beq     $t1, 10, _out_loop
         addi    $a0, $a0, 1
         b       _loop
 
